@@ -198,29 +198,7 @@
             color: var(--text-secondary);
         }
         
-        .stats-card {
-            background: var(--card-bg);
-            color: var(--text-primary);
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-        }
-        
-        .stats-card h3 {
-            color: var(--accent-navy);
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .stats-card p {
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 500;
-            margin: 0;
-        }
+
     </style>
 </head>
 <body>
@@ -236,23 +214,7 @@
                 </p>
             </div>
 
-            <!-- Stats Card -->
-            <div class="stats-card">
-                <div class="row text-center">
-                    <div class="col-md-4">
-                        <h3 id="propertyCount">-</h3>
-                        <p class="mb-0">Properties</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h3 id="communityCount">-</h3>
-                        <p class="mb-0">Communities</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h3 id="transactionCount">-</h3>
-                        <p class="mb-0">Transactions</p>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Search Section -->
             <div class="search-section">
@@ -315,7 +277,6 @@
                 
                 this.initializeElements();
                 this.bindEvents();
-                this.loadStats();
             }
             
             initializeElements() {
@@ -572,17 +533,7 @@
                 this.resultsContainer.innerHTML = html;
             }
             
-            async loadStats() {
-                try {
-                    const response = await fetch('/api/stats');
-                    const stats = await response.json();
-                    document.getElementById('propertyCount').textContent = stats.property_count || '-';
-                    document.getElementById('communityCount').textContent = stats.community_count || '-';
-                    document.getElementById('transactionCount').textContent = stats.transaction_count || '-';
-                } catch (error) {
-                    console.error('Error loading stats:', error);
-                }
-            }
+
         }
         
         // Initialize the application

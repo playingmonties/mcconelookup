@@ -1,1 +1,1 @@
-web: gunicorn web_app:app
+web: gunicorn web_app_postgres_optimized:app
