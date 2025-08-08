@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dubai Property Transaction Lookup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #f8f9fa;
+            --secondary-bg: #ffffff;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --accent-gold: #d4af37;
+            --accent-navy: #1e3a8a;
+            --accent-cream: #f5f5dc;
+            --accent-charcoal: #36454f;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f5f5f5 100%);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .main-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            margin: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+
+        
+
+        
+        .search-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 32px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+        
+        .form-control {
+            background: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 14px 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .autocomplete-container {
+            position: relative;
+        }
+        
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            margin-top: 4px;
+        }
+        
+        .autocomplete-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s ease;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .autocomplete-item:hover {
+            background-color: var(--accent-cream);
+        }
+        
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        
+        .transaction-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        .transaction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .transaction-header {
+            background: var(--accent-navy);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .transaction-body {
+            padding: 20px;
+            background: var(--card-bg);
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .info-value {
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-align: right;
+        }
+        
+        .btn-search {
+            background: var(--accent-navy);
+            border: none;
+            border-radius: 6px;
+            padding: 14px 28px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-search:hover:not(:disabled) {
+            background: #1e40af;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .btn-search:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+        
+        .stats-card {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+        
+        .stats-card h3 {
+            color: var(--accent-navy);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .stats-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="main-container p-5">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold" style="color: var(--text-primary); font-size: 2.5rem; margin-bottom: 16px;">
+                    <i class="fas fa-building me-3" style="color: var(--accent-gold);"></i>
+                    McCone Properties
+                </h1>
+                <p class="lead" style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 0;">
+                    Dubai Property Transaction Lookup
+                </p>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="stats-card">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <h3 id="propertyCount">-</h3>
+                        <p class="mb-0">Properties</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3 id="communityCount">-</h3>
+                        <p class="mb-0">Communities</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3 id="transactionCount">-</h3>
+                        <p class="mb-0">Transactions</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="propertySearch" class="form-label fw-bold" style="color: var(--text-primary); font-size: 14px; margin-bottom: 8px;">
+                            <i class="fas fa-building me-2" style="color: var(--accent-blue);"></i>Property
+                        </label>
+                        <div class="autocomplete-container">
+                            <input type="text" class="form-control" id="propertySearch" 
+                                   placeholder="Type to search properties (e.g., 'Imperial', 'Bulgari')">
+                            <div class="autocomplete-results" id="propertyResults" style="display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="unitSearch" class="form-label fw-bold" style="color: var(--text-primary); font-size: 14px; margin-bottom: 8px;">
+                            <i class="fas fa-home me-2" style="color: var(--accent-blue);"></i>Unit Number
+                        </label>
+                        <div class="autocomplete-container">
+                            <input type="text" class="form-control" id="unitSearch" 
+                                   placeholder="Select property first" disabled>
+                            <div class="autocomplete-results" id="unitResults" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button class="btn btn-search btn-lg" id="searchBtn" disabled>
+                        <i class="fas fa-search me-2"></i>Search Transactions
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading transaction data...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" style="display: none;">
+                <h3 class="mb-4" style="color: var(--text-primary); font-size: 1.5rem; font-weight: 600;">
+                    <i class="fas fa-list-alt me-2" style="color: var(--accent-blue);"></i>Transaction Results
+                </h3>
+                <div id="resultsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class PropertyLookup {
+            constructor() {
+                this.selectedProperty = '';
+                this.selectedUnit = '';
+                this.debounceTimer = null;
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.loadStats();
+            }
+            
+            initializeElements() {
+                this.propertySearch = document.getElementById('propertySearch');
+                this.unitSearch = document.getElementById('unitSearch');
+                this.searchBtn = document.getElementById('searchBtn');
+                this.resultsSection = document.getElementById('resultsSection');
+                this.resultsContainer = document.getElementById('resultsContainer');
+                this.loadingSpinner = document.getElementById('loadingSpinner');
+                
+                this.propertyResults = document.getElementById('propertyResults');
+                this.unitResults = document.getElementById('unitResults');
+            }
+            
+            bindEvents() {
+                // Property search
+                this.propertySearch.addEventListener('input', (e) => {
+                    this.debounce(() => this.searchProperties(e.target.value), 300);
+                });
+                
+                this.propertySearch.addEventListener('focus', () => {
+                    if (this.propertySearch.value) {
+                        this.searchProperties(this.propertySearch.value);
+                    }
+                });
+                
+                // Unit search
+                this.unitSearch.addEventListener('input', (e) => {
+                    this.debounce(() => this.searchUnits(e.target.value), 300);
+                });
+                
+                this.unitSearch.addEventListener('focus', () => {
+                    if (this.unitSearch.value && this.selectedProperty) {
+                        this.searchUnits(this.unitSearch.value);
+                    }
+                });
+                
+                // Search button
+                this.searchBtn.addEventListener('click', () => {
+                    this.searchTransactions();
+                });
+                
+                // Hide autocomplete when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.autocomplete-container')) {
+                        this.hideAllAutocomplete();
+                    }
+                });
+            }
+            
+            debounce(func, wait) {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(func, wait);
+            }
+            
+            async searchProperties(query) {
+                if (!query.trim()) {
+                    this.hideAutocomplete(this.propertyResults);
+                    return;
+                }
+                
+                try {
+                    console.log('Searching for properties with query:', query);
+                    const response = await fetch(`/api/search_properties?q=${encodeURIComponent(query)}`);
+                    const results = await response.json();
+                    console.log('Property search results:', results);
+                    this.showAutocompleteResults(this.propertyResults, results, (selected) => {
+                        this.selectProperty(selected);
+                    });
+                } catch (error) {
+                    console.error('Error searching properties:', error);
+                }
+            }
+            
+            async searchUnits(query) {
+                if (!query.trim() || !this.selectedProperty) {
+                    this.hideAutocomplete(this.unitResults);
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/api/search_units?property=${encodeURIComponent(this.selectedProperty)}&q=${encodeURIComponent(query)}`);
+                    const results = await response.json();
+                    this.showAutocompleteResults(this.unitResults, results, (selected) => {
+                        this.selectUnit(selected);
+                    });
+                } catch (error) {
+                    console.error('Error searching units:', error);
+                }
+            }
+            
+            showAutocompleteResults(container, results, onSelect) {
+                container.innerHTML = '';
+                
+                if (results.length === 0) {
+                    container.innerHTML = '<div class="autocomplete-item">No results found</div>';
+                } else {
+                    results.forEach(result => {
+                        const item = document.createElement('div');
+                        item.className = 'autocomplete-item';
+                        item.textContent = result;
+                        item.addEventListener('click', () => {
+                            onSelect(result);
+                            this.hideAutocomplete(container);
+                        });
+                        container.appendChild(item);
+                    });
+                }
+                
+                container.style.display = 'block';
+                console.log('Showing autocomplete with', results.length, 'results');
+            }
+            
+            hideAutocomplete(container) {
+                container.style.display = 'none';
+            }
+            
+            hideAllAutocomplete() {
+                this.hideAutocomplete(this.propertyResults);
+                this.hideAutocomplete(this.unitResults);
+            }
+            
+            selectProperty(property) {
+                this.selectedProperty = property;
+                this.propertySearch.value = property;
+                this.unitSearch.disabled = false;
+                this.unitSearch.placeholder = 'Type to search units';
+                this.unitSearch.value = '';
+                this.selectedUnit = '';
+                this.updateSearchButton();
+            }
+            
+            selectUnit(unit) {
+                this.selectedUnit = unit;
+                this.unitSearch.value = unit;
+                this.updateSearchButton();
+            }
+            
+            updateSearchButton() {
+                this.searchBtn.disabled = !(this.selectedProperty && this.selectedUnit);
+            }
+            
+            async searchTransactions() {
+                if (!this.selectedProperty || !this.selectedUnit) {
+                    return;
+                }
+                
+                this.searchBtn.disabled = true;
+                this.searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Searching...';
+                this.loadingSpinner.style.display = 'block';
+                this.resultsSection.style.display = 'none';
+                
+                try {
+                    const response = await fetch(`/api/get_transactions?property=${encodeURIComponent(this.selectedProperty)}&unit=${encodeURIComponent(this.selectedUnit)}`);
+                    const transactions = await response.json();
+                    this.displayResults(transactions);
+                } catch (error) {
+                    console.error('Error searching transactions:', error);
+                    this.resultsContainer.innerHTML = '<div class="alert alert-danger">Error loading transaction data</div>';
+                } finally {
+                    this.searchBtn.disabled = false;
+                    this.searchBtn.innerHTML = '<i class="fas fa-search me-2"></i>Search Transactions';
+                    this.loadingSpinner.style.display = 'none';
+                }
+            }
+            
+            displayResults(transactions) {
+                this.resultsSection.style.display = 'block';
+                
+                if (transactions.length === 0) {
+                    this.resultsContainer.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No transaction data found for the selected unit.
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                transactions.forEach((transaction, index) => {
+                    html += `
+                        <div class="transaction-card">
+                            <div class="transaction-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-file-contract me-2"></i>
+                                    Transaction ${index + 1} - ${transaction.community}
+                                </h5>
+                            </div>
+                            <div class="transaction-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="info-row">
+                                            <span class="info-label">Transaction Date:</span>
+                                            <span class="info-value">${transaction.transaction_date || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Price (AED):</span>
+                                            <span class="info-value">${transaction.price_aed || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Price per Sq Ft:</span>
+                                            <span class="info-value">${transaction.price_per_sqft || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Developer:</span>
+                                            <span class="info-value">${transaction.developer || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Property Type:</span>
+                                            <span class="info-value">${transaction.property_type || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Bedrooms:</span>
+                                            <span class="info-value">${transaction.bedrooms || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Built-up Area (Sq Ft):</span>
+                                            <span class="info-value">${transaction.built_up_area_sqft || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-row">
+                                            <span class="info-label">Owner Name:</span>
+                                            <span class="info-value">${transaction.owner_name || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Mobile 1:</span>
+                                            <span class="info-value">${transaction.owner_mobile_1 || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Mobile 2:</span>
+                                            <span class="info-value">${transaction.owner_mobile_2 || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Original Mobile:</span>
+                                            <span class="info-value">${transaction.original_mobile || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Owner Country:</span>
+                                            <span class="info-value">${transaction.owner_country || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Transaction Type:</span>
+                                            <span class="info-value">${transaction.transaction_type || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                this.resultsContainer.innerHTML = html;
+            }
+            
+            async loadStats() {
+                try {
+                    const response = await fetch('/api/stats');
+                    const stats = await response.json();
+                    document.getElementById('propertyCount').textContent = stats.property_count || '-';
+                    document.getElementById('communityCount').textContent = stats.community_count || '-';
+                    document.getElementById('transactionCount').textContent = stats.transaction_count || '-';
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+        }
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new PropertyLookup();
+        });
+    </script>
+</body>
+</html>
