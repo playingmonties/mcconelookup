@@ -1,28 +1,10 @@
-# Excel files
-*.xlsx
-*.xls
-
-# Cache files
-*.pkl
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-
-# Virtual environment
-venv/
-env/
-.env
-
 # Logs
 *.log
+
+# Large data files (exclude from root, but allow in data/ folder)
+*.xlsx
+*.pkl
+
+# Allow data folder contents
+!data/
+!data/*.xlsx

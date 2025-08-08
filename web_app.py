@@ -29,7 +29,7 @@ class DubaiPropertyLookup:
             return
         
         print("Loading from Excel files...")
-        excel_files = glob.glob("*_preprocessing.xlsx")
+        excel_files = glob.glob("data/*_preprocessing.xlsx")
         
         for file_path in excel_files:
             try:
