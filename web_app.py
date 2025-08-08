@@ -40,29 +40,55 @@ class DubaiPropertyLookup:
         print("Loading from Supabase Storage...")
         
         try:
-            # List all files in the storage bucket using REST API
-            headers = {
-                'Authorization': f'Bearer {SUPABASE_KEY}',
-                'Content-Type': 'application/json'
-            }
+            # Use hardcoded list of files since the list API has issues
+            excel_files = [
+                "downtown_preprocessing.xlsx",
+                "victory_heights_preprocessing.xlsx",
+                "al_barari_preprocessing.xlsx",
+                "jvt_preprocessing.xlsx",
+                "emaar_south_preprocessing.xlsx",
+                "motor_city_preprocessing.xlsx",
+                "mjl_preprocessing.xlsx",
+                "jvc_preprocessing.xlsx",
+                "arjan_preprocessing.xlsx",
+                "dubai_marina_preprocessing.xlsx",
+                "city_walk_preprocessing.xlsx",
+                "jbr_preprocessing.xlsx",
+                "dubai_hills_preprocessing.xlsx",
+                "palm_jumeirah_preprocessing.xlsx",
+                "jlt_preprocessing.xlsx",
+                "business_bay_preprocessing.xlsx",
+                "impz_preprocessing.xlsx",
+                "jge_preprocessing.xlsx",
+                "emaar_beachfront_preprocessing.xlsx",
+                "nad_al_shiba_preprocessing.xlsx",
+                "arabian_ranches_preprocessing.xlsx",
+                "mudon_preprocessing.xlsx",
+                "mira_preprocessing.xlsx",
+                "town_square_preprocessing.xlsx",
+                "bluewaters_preprocessing.xlsx",
+                "damac_hills_1_preprocessing.xlsx",
+                "greens_preprocessing.xlsx",
+                "la_mer_preprocessing.xlsx",
+                "damac_hills_2_preprocessing.xlsx",
+                "serena_preprocessing.xlsx",
+                "furjan_preprocessing.xlsx",
+                "jumeirah_bay_preprocessing.xlsx",
+                "jumeirah_park_preprocessing.xlsx",
+                "emirates_living_preprocessing.xlsx",
+                "tilal_al_ghaf_preprocessing.xlsx",
+                "villanova_preprocessing.xlsx",
+                "meydan_preprocessing.xlsx",
+                "lakes_preprocessing.xlsx",
+                "damac_lagoons_preprocessing.xlsx",
+                "dubai_south_preprocessing.xlsx"
+            ]
             
-            list_url = f"{SUPABASE_URL}/storage/v1/object/list/excel-files"
-            response = requests.get(list_url, headers=headers)
-            
-            if response.status_code != 200:
-                print(f"Error listing files: {response.status_code} - {response.text}")
-                return
-            
-            files = response.json()
-            print(f"Found {len(files)} files in Supabase Storage")
+            print(f"Loading {len(excel_files)} files from Supabase Storage")
             
             loaded_files = 0
-            for file_info in files:
+            for filename in excel_files:
                 try:
-                    filename = file_info['name']
-                    if not filename.endswith('.xlsx'):
-                        continue
-                        
                     print(f"Loading {filename} from Supabase...")
                     
                     # Download file from Supabase using REST API
