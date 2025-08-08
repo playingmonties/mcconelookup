@@ -8,8 +8,8 @@ import json
 
 app = Flask(__name__)
 
-# PostgreSQL connection string
-DATABASE_URL = "postgresql://postgres.hwfrwtuqpjbkuywgcvwn:Enoccm_1199@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
+# PostgreSQL connection string - use environment variable if available
+DATABASE_URL = os.environ.get('DATABASE_URL', "postgresql://postgres.hwfrwtuqpjbkuywgcvwn:Enoccm_1199@aws-0-ap-south-1.pooler.supabase.com:5432/postgres")
 
 class DubaiPropertyLookup:
     def __init__(self):
