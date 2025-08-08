@@ -4,6 +4,7 @@ import os
 import glob
 import pickle
 from typing import List, Dict
+import time
 
 app = Flask(__name__)
 
@@ -18,56 +19,73 @@ class DubaiPropertyLookup:
         """Load data from cache or Excel files"""
         cache_file = "property_cache.pkl"
         
-        if os.path.exists(cache_file):
-            print("Loading from cache...")
-            with open(cache_file, 'rb') as f:
-                cached_data = pickle.load(f)
-                self.data_cache = cached_data['data_cache']
-                self.all_properties = cached_data['all_properties']
-                self.all_units = cached_data['all_units']
-            print(f"Loaded {len(self.all_properties)} properties from cache")
-            return
+        try:
+            if os.path.exists(cache_file):
+                print("Loading from cache...")
+                with open(cache_file, 'rb') as f:
+                    cached_data = pickle.load(f)
+                    self.data_cache = cached_data['data_cache']
+                    self.all_properties = cached_data['all_properties']
+                    self.all_units = cached_data['all_units']
+                print(f"Loaded {len(self.all_properties)} properties from cache")
+                return
+        except Exception as e:
+            print(f"Cache loading failed: {e}")
         
         print("Loading from Excel files...")
         excel_files = glob.glob("data/*_preprocessing.xlsx")
+        print(f"Found {len(excel_files)} Excel files")
         
+        loaded_files = 0
         for file_path in excel_files:
             try:
                 filename = os.path.basename(file_path)
                 community = filename.replace("_preprocessing.xlsx", "").replace("_", " ").title()
                 
+                print(f"Loading {filename}...")
                 df = pd.read_excel(file_path)
                 df = df.dropna(subset=['property', 'Unit'])
                 df['property'] = df['property'].astype(str).str.strip()
                 df['Unit'] = df['Unit'].astype(str).str.strip()
                 
                 self.data_cache[community] = df
+                loaded_files += 1
                 print(f"Loaded {len(df)} records for {community}")
                 
             except Exception as e:
                 print(f"Error loading {file_path}: {e}")
                 continue
         
+        print(f"Successfully loaded {loaded_files} files")
+        
         # Build property and unit lists
         for community, df in self.data_cache.items():
-            properties = df['property'].unique()
-            for prop in properties:
-                if prop not in self.all_properties:
-                    self.all_properties.append(prop)
-                
-                property_data = df[df['property'] == prop]
-                units = property_data['Unit'].unique()
-                self.all_units[prop] = units.tolist()
+            try:
+                properties = df['property'].unique()
+                for prop in properties:
+                    if prop not in self.all_properties:
+                        self.all_properties.append(prop)
+                    
+                    property_data = df[df['property'] == prop]
+                    units = property_data['Unit'].unique()
+                    self.all_units[prop] = units.tolist()
+            except Exception as e:
+                print(f"Error processing {community}: {e}")
+                continue
         
         # Save cache
-        cache_data = {
-            'data_cache': self.data_cache,
-            'all_properties': self.all_properties,
-            'all_units': self.all_units
-        }
-        
-        with open(cache_file, 'wb') as f:
-            pickle.dump(cache_data, f)
+        try:
+            cache_data = {
+                'data_cache': self.data_cache,
+                'all_properties': self.all_properties,
+                'all_units': self.all_units
+            }
+            
+            with open(cache_file, 'wb') as f:
+                pickle.dump(cache_data, f)
+            print("Cache saved successfully")
+        except Exception as e:
+            print(f"Failed to save cache: {e}")
         
         print(f"Loaded {len(self.all_properties)} properties")
     
@@ -121,8 +139,26 @@ class DubaiPropertyLookup:
 
 # Initialize the lookup system
 print("Initializing Dubai Property Lookup System...")
-lookup_system = DubaiPropertyLookup()
-print("Lookup system initialized successfully!")
+lookup_system = None
+
+def initialize_lookup():
+    global lookup_system
+    try:
+        lookup_system = DubaiPropertyLookup()
+        print("Lookup system initialized successfully!")
+    except Exception as e:
+        print(f"Failed to initialize lookup system: {e}")
+        # Create empty system as fallback
+        lookup_system = DubaiPropertyLookup()
+        lookup_system.data_cache = {}
+        lookup_system.all_properties = []
+        lookup_system.all_units = {}
+
+# Start initialization in background
+import threading
+init_thread = threading.Thread(target=initialize_lookup)
+init_thread.daemon = True
+init_thread.start()
 
 @app.route('/')
 def index():
@@ -130,6 +166,9 @@ def index():
 
 @app.route('/api/search_properties')
 def search_properties():
+    if lookup_system is None:
+        return jsonify({'error': 'System still loading'})
+    
     query = request.args.get('q', '').strip()
     if not query:
         return jsonify([])
@@ -139,6 +178,9 @@ def search_properties():
 
 @app.route('/api/search_units')
 def search_units():
+    if lookup_system is None:
+        return jsonify({'error': 'System still loading'})
+    
     property_name = request.args.get('property', '').strip()
     query = request.args.get('q', '').strip()
     
@@ -150,6 +192,9 @@ def search_units():
 
 @app.route('/api/get_transactions')
 def get_transactions():
+    if lookup_system is None:
+        return jsonify({'error': 'System still loading'})
+    
     property_name = request.args.get('property', '').strip()
     unit_number = request.args.get('unit', '').strip()
     
@@ -161,6 +206,9 @@ def get_transactions():
 
 @app.route('/api/stats')
 def get_stats():
+    if lookup_system is None:
+        return jsonify({'error': 'System still loading'})
+    
     property_count = len(lookup_system.all_properties)
     community_count = len(lookup_system.data_cache)
     
@@ -174,6 +222,12 @@ def get_stats():
         'community_count': community_count,
         'transaction_count': transaction_count
     })
+
+@app.route('/health')
+def health_check():
+    if lookup_system is None:
+        return jsonify({'status': 'loading'})
+    return jsonify({'status': 'healthy', 'properties_loaded': len(lookup_system.all_properties)})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
