@@ -48,31 +48,21 @@ class DubaiPropertyLookup:
             
             print("✅ Successfully connected to database!")
             
-            # Get all unique properties and their units in one query
-            print("Loading properties and units...")
+            # Just load properties for now (units will be loaded on-demand)
+            print("Loading properties...")
             cursor.execute("""
-                SELECT DISTINCT property, unit 
+                SELECT DISTINCT property 
                 FROM transactions 
-                WHERE property IS NOT NULL AND property != '' 
-                AND unit IS NOT NULL AND unit != ''
-                ORDER BY property, unit
+                WHERE property IS NOT NULL AND property != ''
+                ORDER BY property
             """)
             
-            results = cursor.fetchall()
-            print(f"Found {len(results)} property-unit combinations")
+            properties = cursor.fetchall()
+            self.all_properties = [prop[0] for prop in properties]
+            print(f"Found {len(self.all_properties)} unique properties")
             
-            # Process the results
-            self.all_properties = []
+            # Initialize empty units dict (will be populated on-demand)
             self.all_units = {}
-            
-            for property_name, unit in results:
-                if property_name not in self.all_properties:
-                    self.all_properties.append(property_name)
-                    self.all_units[property_name] = []
-                self.all_units[property_name].append(unit)
-            
-            print(f"Processed {len(self.all_properties)} unique properties")
-            print(f"Loaded units for {len(self.all_units)} properties")
             
             cursor.close()
             conn.close()
@@ -102,10 +92,31 @@ class DubaiPropertyLookup:
     
     def search_units(self, property_name: str, query: str) -> List[str]:
         """Search units within a property"""
-        if property_name not in self.all_units:
-            return []
-        
         query = query.lower()
+        
+        # Load units for this property if not already loaded
+        if property_name not in self.all_units:
+            try:
+                conn = psycopg2.connect(DATABASE_URL)
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT DISTINCT unit 
+                    FROM transactions 
+                    WHERE property = %s AND unit IS NOT NULL AND unit != ''
+                    ORDER BY unit
+                """, (property_name,))
+                
+                units = cursor.fetchall()
+                self.all_units[property_name] = [unit[0] for unit in units]
+                
+                cursor.close()
+                conn.close()
+                
+            except Exception as e:
+                print(f"Error loading units for {property_name}: {e}")
+                return []
+        
         units = self.all_units[property_name]
         return [unit for unit in units if query in unit.lower()]
     
