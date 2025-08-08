@@ -91,6 +91,9 @@ class DubaiPropertyLookup:
             print(f"❌ Error loading from database: {e}")
             print(f"Error type: {type(e).__name__}")
             print(f"Database URL used: {DATABASE_URL[:50]}...")
+            # Set empty defaults to prevent None errors
+            self.all_properties = []
+            self.all_units = {}
     
     def search_properties(self, query: str) -> List[str]:
         """Search properties by name"""
@@ -183,11 +186,10 @@ def initialize_lookup():
     lookup_system = DubaiPropertyLookup()
     print("Initialization complete!")
 
-# Initialize in background
-import threading
-init_thread = threading.Thread(target=initialize_lookup)
-init_thread.daemon = True
-init_thread.start()
+# Initialize synchronously to ensure data is loaded before serving requests
+print("Initializing Dubai Property Lookup System...")
+initialize_lookup()
+print("Initialization complete!")
 
 @app.route('/')
 def index():
