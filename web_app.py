@@ -120,7 +120,9 @@ class DubaiPropertyLookup:
         return all_transactions
 
 # Initialize the lookup system
+print("Initializing Dubai Property Lookup System...")
 lookup_system = DubaiPropertyLookup()
+print("Lookup system initialized successfully!")
 
 @app.route('/')
 def index():
@@ -174,4 +176,6 @@ def get_stats():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    port = int(os.environ.get('PORT', 8080))
+    print(f"Starting Flask app on port {port}")
+    app.run(debug=True, host='0.0.0.0', port=port)
