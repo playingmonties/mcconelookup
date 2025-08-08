@@ -22,6 +22,9 @@ class DubaiPropertyLookup:
         """Load data from cache or PostgreSQL Database"""
         cache_file = "property_cache.pkl"
         
+        print(f"Starting data load process...")
+        print(f"Database URL: {DATABASE_URL[:50]}...")
+        
         try:
             if os.path.exists(cache_file):
                 print("Loading from cache...")
@@ -38,6 +41,7 @@ class DubaiPropertyLookup:
         print("Loading from PostgreSQL Database...")
         
         try:
+            print("Attempting to connect to PostgreSQL database...")
             # Connect to PostgreSQL database
             conn = psycopg2.connect(DATABASE_URL)
             cursor = conn.cursor()
@@ -84,7 +88,9 @@ class DubaiPropertyLookup:
             print("Data cached successfully")
             
         except Exception as e:
-            print(f"Error loading from database: {e}")
+            print(f"❌ Error loading from database: {e}")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Database URL used: {DATABASE_URL[:50]}...")
     
     def search_properties(self, query: str) -> List[str]:
         """Search properties by name"""
@@ -247,6 +253,28 @@ def get_stats():
 @app.route('/health')
 def health_check():
     return jsonify({'status': 'healthy'})
+
+@app.route('/api/db-test')
+def test_database():
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM transactions")
+        count = cursor.fetchone()[0]
+        cursor.close()
+        conn.close()
+        return jsonify({
+            'status': 'connected',
+            'transaction_count': count,
+            'database_url': DATABASE_URL[:50] + '...'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'error_type': type(e).__name__,
+            'database_url': DATABASE_URL[:50] + '...'
+        })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
