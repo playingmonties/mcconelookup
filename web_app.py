@@ -1,12 +1,17 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import os
-import glob
 import pickle
 from typing import List, Dict
 import time
+import tempfile
+import requests
 
 app = Flask(__name__)
+
+# Supabase configuration
+SUPABASE_URL = "https://yqnhpnpdvughdkdnlcrv.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxbmhwbnBkdnVnaGRrZG5sY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NTY0MDQsImV4cCI6MjA3MDIzMjQwNH0.g0oN1YrrtmaXGrS67VtMQG8DpA1TGXDydpaMb3D1UNk"
 
 class DubaiPropertyLookup:
     def __init__(self):
@@ -16,7 +21,7 @@ class DubaiPropertyLookup:
         self.load_data()
     
     def load_data(self):
-        """Load data from cache or Excel files"""
+        """Load data from cache or Supabase Storage"""
         cache_file = "property_cache.pkl"
         
         try:
@@ -32,62 +37,106 @@ class DubaiPropertyLookup:
         except Exception as e:
             print(f"Cache loading failed: {e}")
         
-        print("Loading from Excel files...")
-        excel_files = glob.glob("data/*_preprocessing.xlsx")
-        print(f"Found {len(excel_files)} Excel files")
+        print("Loading from Supabase Storage...")
         
-        loaded_files = 0
-        for file_path in excel_files:
-            try:
-                filename = os.path.basename(file_path)
-                community = filename.replace("_preprocessing.xlsx", "").replace("_", " ").title()
-                
-                print(f"Loading {filename}...")
-                df = pd.read_excel(file_path)
-                df = df.dropna(subset=['property', 'Unit'])
-                df['property'] = df['property'].astype(str).str.strip()
-                df['Unit'] = df['Unit'].astype(str).str.strip()
-                
-                self.data_cache[community] = df
-                loaded_files += 1
-                print(f"Loaded {len(df)} records for {community}")
-                
-            except Exception as e:
-                print(f"Error loading {file_path}: {e}")
-                continue
-        
-        print(f"Successfully loaded {loaded_files} files")
-        
-        # Build property and unit lists
-        for community, df in self.data_cache.items():
-            try:
-                properties = df['property'].unique()
-                for prop in properties:
-                    if prop not in self.all_properties:
-                        self.all_properties.append(prop)
-                    
-                    property_data = df[df['property'] == prop]
-                    units = property_data['Unit'].unique()
-                    self.all_units[prop] = units.tolist()
-            except Exception as e:
-                print(f"Error processing {community}: {e}")
-                continue
-        
-        # Save cache
         try:
-            cache_data = {
-                'data_cache': self.data_cache,
-                'all_properties': self.all_properties,
-                'all_units': self.all_units
+            # List all files in the storage bucket using REST API
+            headers = {
+                'Authorization': f'Bearer {SUPABASE_KEY}',
+                'Content-Type': 'application/json'
             }
             
-            with open(cache_file, 'wb') as f:
-                pickle.dump(cache_data, f)
-            print("Cache saved successfully")
+            list_url = f"{SUPABASE_URL}/storage/v1/object/list/excel-files"
+            response = requests.get(list_url, headers=headers)
+            
+            if response.status_code != 200:
+                print(f"Error listing files: {response.status_code} - {response.text}")
+                return
+            
+            files = response.json()
+            print(f"Found {len(files)} files in Supabase Storage")
+            
+            loaded_files = 0
+            for file_info in files:
+                try:
+                    filename = file_info['name']
+                    if not filename.endswith('.xlsx'):
+                        continue
+                        
+                    print(f"Loading {filename} from Supabase...")
+                    
+                    # Download file from Supabase using REST API
+                    download_url = f"{SUPABASE_URL}/storage/v1/object/public/excel-files/{filename}"
+                    file_response = requests.get(download_url)
+                    
+                    if file_response.status_code != 200:
+                        print(f"Error downloading {filename}: {file_response.status_code}")
+                        continue
+                    
+                    # Save to temporary file
+                    with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp_file:
+                        tmp_file.write(file_response.content)
+                        tmp_file_path = tmp_file.name
+                    
+                    # Read Excel file
+                    df = pd.read_excel(tmp_file_path)
+                    df = df.dropna(subset=['property', 'Unit'])
+                    df['property'] = df['property'].astype(str).str.strip()
+                    df['Unit'] = df['Unit'].astype(str).str.strip()
+                    
+                    # Clean up temporary file
+                    os.unlink(tmp_file_path)
+                    
+                    # Extract community name from filename
+                    community = filename.replace("_preprocessing.xlsx", "").replace("_", " ").title()
+                    
+                    self.data_cache[community] = df
+                    loaded_files += 1
+                    print(f"Loaded {len(df)} records for {community}")
+                    
+                except Exception as e:
+                    print(f"Error loading {filename}: {e}")
+                    continue
+            
+            print(f"Successfully loaded {loaded_files} files from Supabase")
+            
+            # Build property and unit lists
+            for community, df in self.data_cache.items():
+                try:
+                    properties = df['property'].unique()
+                    for prop in properties:
+                        if prop not in self.all_properties:
+                            self.all_properties.append(prop)
+                        
+                        property_data = df[df['property'] == prop]
+                        units = property_data['Unit'].unique()
+                        self.all_units[prop] = units.tolist()
+                except Exception as e:
+                    print(f"Error processing {community}: {e}")
+                    continue
+            
+            # Save cache
+            try:
+                cache_data = {
+                    'data_cache': self.data_cache,
+                    'all_properties': self.all_properties,
+                    'all_units': self.all_units
+                }
+                
+                with open(cache_file, 'wb') as f:
+                    pickle.dump(cache_data, f)
+                print("Cache saved successfully")
+            except Exception as e:
+                print(f"Failed to save cache: {e}")
+            
+            print(f"Loaded {len(self.all_properties)} properties")
+            
         except Exception as e:
-            print(f"Failed to save cache: {e}")
-        
-        print(f"Loaded {len(self.all_properties)} properties")
+            print(f"Error connecting to Supabase: {e}")
+            # Create empty system as fallback
+            self.data_cache = {}
+            self.all_properties = []
+            self.all_units = {}
     
     def search_properties(self, query: str) -> List[str]:
         """Search for properties that match the query"""
@@ -138,7 +187,7 @@ class DubaiPropertyLookup:
         return all_transactions
 
 # Initialize the lookup system
-print("Initializing Dubai Property Lookup System...")
+print("Initializing Dubai Property Lookup System with Supabase...")
 lookup_system = None
 
 def initialize_lookup():
